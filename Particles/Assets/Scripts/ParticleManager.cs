@@ -8,123 +8,128 @@ public class ParticleManager : MonoBehaviour
     public float ShpereSize = 0.1f;
     public float Gravity = 0.01f;
     public float BiasToCenter = 0.1f;
+    public float MinDistanceThreashold = 1;
+    public float MinDistanceForce = 1;
     public float Drag;
+    public Vector3 BoundingBox;
     [Header("Random particles")]
-    public float RandomRange;
     public int NumberOfParticlesToSpawn;
     [Header("Data")]
     public List<Particle> Particles;
     public ParticleType[] particleTypes;
-    void Start()
+    [Header("Gizmos")]
+    public float VelocityGizmoLength = 1;
+    [Header("MinMax")]
+    float maxX;
+    float minX;
+    float maxY;
+    float minY;
+    
+    public void Start()
     {
-        SpawnRandomParticles();
+        CalcMinMaxXY();//calculates the offsets for the bounding box
     }
     private void FixedUpdate()
     {
         if (NumberOfParticlesToSpawn != 0) SpawnRandomParticles();
-        else UpdateParticleForcesV2();
+        else
+        {
+            CalcMinMaxXY();
+            UpdateParticleForcesV2();
+        }
+            
     }
     public void UpdateParticleForcesV2()
     {
         //Calc Forces for this frame
-        foreach (var TargetParticle in Particles)
+        foreach (var TargetParticle in Particles)//For every particle
         {
-           foreach (var OtherParticles in Particles) // how to treat others
+            #region Forces
+            foreach (var OtherParticles in Particles)//apply rules by comparing nearby particles
            {
                var dist = Dist(TargetParticle, OtherParticles);
-               var dir = FromTo(TargetParticle, OtherParticles).normalized;
-               if (TargetParticle.color == OtherParticles.color)
-               {
-                   TargetParticle.Velocity = TargetParticle.Velocity + dir * Gravity * 0.1f * Influance(dist);//How to treat friends
-                   TargetParticle.Velocity = TargetParticle.Velocity + (TargetParticle.Velocity.normalized + OtherParticles.Velocity.normalized) * 0.01f;
-                   if (OtherParticles.color == Color.blue) TargetParticle.Velocity = TargetParticle.Velocity + dir * Gravity * 1f;
-               }
-               else TargetParticle.Velocity = TargetParticle.Velocity - dir * Gravity * 0.8f * Influance(dist);//How to treat others
-           
-           }
-           //Bias to center
-           var dirToCenter = FromToG(TargetParticle.gameObject, gameObject).normalized;
-           var distToCenter = DistG(TargetParticle.gameObject, gameObject);
-           TargetParticle.Velocity += dirToCenter * Gravity * 0.1f * distToCenter * Mathf.Sin(Time.time * 2f);
+               var influance = CalcInfluance(dist);
+               if (influance == 0) continue;
 
-            
-           TranslateBasedOnVelocity(TargetParticle);
+               var dirToOtherParticle = FromTo(TargetParticle, OtherParticles).normalized;
+                
+                for (int i = 0; i < TargetParticle.particleType.preferences.Length; i++)
+                {
+                    if (TargetParticle.particleType.preferences[i] == OtherParticles.particleType)
+                    {
+                        float sin = 1;//Will default to 1 if sin is disabled 
+                        if (TargetParticle.particleType.preferencesSin[i]) sin = Mathf.Sin(Time.deltaTime);
+                        //MinDistance
+                        if(dist < MinDistanceThreashold) AddVel(TargetParticle, -dirToOtherParticle * Gravity * TargetParticle.particleType.preferencesForce[i] * MinDistanceForce);
+
+                        //move to other particle
+                        if (TargetParticle.particleType.preferencesForce[i] != 0)
+                            AddVel(TargetParticle, dirToOtherParticle * Gravity * influance * TargetParticle.particleType.preferencesForce[i] * sin);
+                        //converge to similar velocity
+                        if(TargetParticle.particleType.MatchAvgDir[i] != 0) 
+                            AddVel(TargetParticle, (TargetParticle.Velocity.normalized + OtherParticles.Velocity.normalized) * 0.1f * TargetParticle.particleType.MatchAvgDir[i]);
+                        break;
+                    }
+                }
+           }
+            #region Bias to center
+            var dirToCenter = FromToG(TargetParticle.gameObject, gameObject).normalized;
+            var distToCenter = DistG(TargetParticle.gameObject, gameObject);
+            AddVel(TargetParticle,dirToCenter * Gravity * BiasToCenter * distToCenter);
+            #endregion
+            TranslateBasedOnVelocity(TargetParticle);
+            #endregion
+
+            #region xy seamless loop
+
+
+            if (TargetParticle.transform.position.x > maxX)
+            {
+                Vector3 newpos = new Vector3(TargetParticle.transform.position.x - BoundingBox.x * 0.99f, TargetParticle.transform.position.y, TargetParticle.transform.position.z);
+                TargetParticle.transform.position = newpos;
+            }
+            if (TargetParticle.transform.position.x < minX)
+            {
+                Vector3 newpos = new Vector3(TargetParticle.transform.position.x + BoundingBox.x * 0.99f, TargetParticle.transform.position.y, TargetParticle.transform.position.z);
+                TargetParticle.transform.position = newpos;
+            }
+            if (TargetParticle.transform.position.y > maxY)
+            {
+                Vector3 newpos = new Vector3(TargetParticle.transform.position.x, TargetParticle.transform.position.y - BoundingBox.y * 0.99f, TargetParticle.transform.position.z);
+                TargetParticle.transform.position = newpos;
+            }
+            if (TargetParticle.transform.position.y < minY)
+            {
+                Vector3 newpos = new Vector3(TargetParticle.transform.position.x, TargetParticle.transform.position.y + BoundingBox.y * 0.99f, TargetParticle.transform.position.z);
+                TargetParticle.transform.position = newpos;
+            }
+            #endregion
+
+
         }
     }
-    public void UpdateParticleForcesV1()
+    #region Particle Functions
+    public void AddVel(Particle particle, Vector3 VectorToAdd)
     {
-        //Calc Forces for this frame
-        foreach (var TargetParticle in Particles)
-        {
-            if(TargetParticle.color == Color.red)
-            {
-                foreach (var OtherParticles in Particles) // how to treat others
-                {
-                    var dist = Dist(TargetParticle, OtherParticles);
-                    var dir = FromTo(TargetParticle, OtherParticles).normalized;
-                    if (TargetParticle.color == OtherParticles.color)
-                    {
-                        TargetParticle.Velocity = TargetParticle.Velocity + dir * Gravity * 0.1f * Influance(dist);//How to treat friends
-                        TargetParticle.Velocity = TargetParticle.Velocity + (TargetParticle.Velocity.normalized + OtherParticles.Velocity.normalized) * 0.01f;
-                        if(OtherParticles.color == Color.blue) TargetParticle.Velocity = TargetParticle.Velocity + dir * Gravity * 1f;
-                    }
-                    else TargetParticle.Velocity = TargetParticle.Velocity - dir * Gravity * 0.8f * Influance(dist);//How to treat others
-                }
-                //Bias to center
-                var dirToCenter = FromToG(TargetParticle.gameObject, gameObject).normalized;
-                var distToCenter = DistG(TargetParticle.gameObject, gameObject);
-                TargetParticle.Velocity += dirToCenter * Gravity * 0.05f * distToCenter;
-                
-            }
-            else if (TargetParticle.color == Color.green)
-            {
-                foreach (var OtherParticles in Particles) // how to treat others
-                {
-                    var dist = Dist(TargetParticle, OtherParticles);
-                    var dir = FromTo(TargetParticle, OtherParticles).normalized;
-                    if (TargetParticle.color == OtherParticles.color) TargetParticle.Velocity = TargetParticle.Velocity - dir * Gravity * 0.6f * Influance(dist);//How to treat friends
-                    else
-                    {
-                        TargetParticle.Velocity = TargetParticle.Velocity + dir * Gravity * 5f * Influance(dist);//How to treat others
-                        if(OtherParticles.color == Color.blue) TargetParticle.Velocity = TargetParticle.Velocity + dir * Gravity * 8f * Influance(dist);//How to treat others
-                    } 
-                }
-                //Bias to center
-                var dirToCenter = FromToG(TargetParticle.gameObject, gameObject).normalized;
-                var distToCenter = DistG(TargetParticle.gameObject, gameObject);
-                TargetParticle.Velocity += dirToCenter * Gravity * 0.1f * distToCenter;
-            }
-            else//blue
-            {
-                foreach (var OtherParticles in Particles) // how to treat others
-                {
-                    var dist = Dist(TargetParticle, OtherParticles);
-                    var dir = FromTo(TargetParticle, OtherParticles).normalized;
-                    if (TargetParticle.color == OtherParticles.color) TargetParticle.Velocity = TargetParticle.Velocity - dir * Gravity * 0.1f * Influance(dist) * Mathf.Cos(Time.time * 2);//How to treat friends
-                    else
-                    {
-                        TargetParticle.Velocity = TargetParticle.Velocity + (dir * Gravity * 0.1f * Influance(dist) * Mathf.Cos(Time.time * 2));//How to treat others
-                        if(OtherParticles.color == Color.red) TargetParticle.Velocity = TargetParticle.Velocity + (dir * Gravity * 0.1f * Mathf.Cos(Time.time * 2));//How to treat others
-
-                    }
-                }
-                //Bias to center
-                var dirToCenter = FromToG(TargetParticle.gameObject, gameObject).normalized;
-                var distToCenter = DistG(TargetParticle.gameObject, gameObject);
-                TargetParticle.Velocity += dirToCenter * Gravity * 0.1f * distToCenter * Mathf.Sin(Time.time * 2f);
-
-            }
-            TranslateBasedOnVelocity(TargetParticle);
-        }
+        particle.Velocity = particle.Velocity + VectorToAdd;
     }
     public void TranslateBasedOnVelocity(Particle TargetParticle)
     {
         TargetParticle.Velocity = TargetParticle.Velocity * (1 - Drag);
         TargetParticle.transform.position = TargetParticle.transform.position + TargetParticle.Velocity * 0.1f;
     }
-    public float Influance(float dist)
+    #endregion
+    #region Math
+    public void CalcMinMaxXY()
     {
-        return Mathf.Clamp( 1 / dist, 0, 1);
+        maxX = transform.position.x + BoundingBox.x * 0.5f;
+        minX = transform.position.x - BoundingBox.x * 0.5f;
+        maxY = transform.position.y + BoundingBox.y * 0.5f;
+        minY = transform.position.y - BoundingBox.y * 0.5f;
+    }
+    public float CalcInfluance(float dist)
+    {
+        return Mathf.Clamp( (-dist*0.2f) + 1, 0, 1);
     }
     public float Dist(Particle From, Particle To)
     {
@@ -142,7 +147,8 @@ public class ParticleManager : MonoBehaviour
     {
         return To.transform.position - From.transform.position;
     }
-    void SpawnRandomParticles()
+    #endregion
+    public void SpawnRandomParticles()
     {
         NumberOfParticlesToSpawn -= 1;
         var EmptyObj = new GameObject("particle");
@@ -151,16 +157,28 @@ public class ParticleManager : MonoBehaviour
         var ran = Random.Range(0, particleTypes.Length);
         particle.particleType = particleTypes[ran];
         particle.color = particleTypes[ran].color;
-        particle.transform.position = new Vector3(Random.Range(-RandomRange, RandomRange), Random.Range(-RandomRange, RandomRange), 0);
+        particle.transform.position = new Vector3(Random.Range(minX, maxX), Random.Range(minY, maxY), 0);
         Particles.Add(particle);
     }
     public void OnDrawGizmos()
     {
+        #if UNITY_EDITOR
+          CalcMinMaxXY();
+        #endif
+
         foreach (var particle in Particles)
         {
             Gizmos.color = particle.color;
             Gizmos.DrawSphere(particle.transform.position, ShpereSize);
-            Gizmos.DrawLine(particle.transform.position, particle.transform.position + particle.Velocity);
+            Gizmos.DrawLine(particle.transform.position, particle.transform.position + particle.Velocity * VelocityGizmoLength);
         }
+
+
+        //Draw bounding box
+        Gizmos.color = Color.white;
+        Gizmos.DrawLine(transform.position + maxX * Vector3.left + maxY * Vector3.up, transform.position + maxX * Vector3.right + maxY * Vector3.up);
+        Gizmos.DrawLine(transform.position + maxX * Vector3.left + maxY * Vector3.down, transform.position + maxX * Vector3.right + maxY * Vector3.down);
+        Gizmos.DrawLine(transform.position + maxX * Vector3.right + maxY * Vector3.up, transform.position + maxX * Vector3.right + maxY * Vector3.down);
+        Gizmos.DrawLine(transform.position + maxX * Vector3.left + maxY * Vector3.up, transform.position + maxX * Vector3.left + maxY * Vector3.down);
     }
 }

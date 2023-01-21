@@ -12,16 +12,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76d63102a71a8e44fb45b26c79c7e0cd, type: 3}
   m_Name: Purple
   m_EditorClassIdentifier: 
-  color: {r: 1, g: 0, b: 1, a: 1}
+  color: {r: 1, g: 0, b: 0.85436773, a: 1}
   preferences:
   - {fileID: 11400000, guid: 466702741bbc2f44f943b987650b0893, type: 2}
   - {fileID: 11400000, guid: 8b42955564fdb404a92fa26364438308, type: 2}
   - {fileID: 11400000, guid: 443daee9142a4e7449b89f55c93fe529, type: 2}
   - {fileID: 11400000}
   preferencesForce:
+  - 0.2
+  - 0
+  - -0.2
+  - 0.2
+  MatchAvgDir:
   - 0
   - 0
   - 0
   - 0
   preferencesSin: 00000000
-  preferencesCos: 00000000

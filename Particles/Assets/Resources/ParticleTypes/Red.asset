@@ -17,9 +17,15 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 466702741bbc2f44f943b987650b0893, type: 2}
   - {fileID: 11400000, guid: 8b42955564fdb404a92fa26364438308, type: 2}
   - {fileID: 11400000}
+  - {fileID: 11400000, guid: 1d94665e6ebeaa841a934f80ef18e090, type: 2}
   preferencesForce:
   - 0
+  - -0.2
+  - 0.2
+  - 0.2
+  MatchAvgDir:
   - 0
   - 0
-  preferencesSin: 000000
-  preferencesCos: 000000
+  - 0
+  - 0
+  preferencesSin: 00000000

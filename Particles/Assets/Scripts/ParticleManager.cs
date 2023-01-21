@@ -14,6 +14,7 @@ public class ParticleManager : MonoBehaviour
     public int NumberOfParticlesToSpawn;
     [Header("Data")]
     public List<Particle> Particles;
+    public ParticleType[] particleTypes;
     void Start()
     {
         SpawnRandomParticles();
@@ -21,9 +22,36 @@ public class ParticleManager : MonoBehaviour
     private void FixedUpdate()
     {
         if (NumberOfParticlesToSpawn != 0) SpawnRandomParticles();
-        else UpdateParticleForces();
+        else UpdateParticleForcesV2();
     }
-    public void UpdateParticleForces()
+    public void UpdateParticleForcesV2()
+    {
+        //Calc Forces for this frame
+        foreach (var TargetParticle in Particles)
+        {
+           foreach (var OtherParticles in Particles) // how to treat others
+           {
+               var dist = Dist(TargetParticle, OtherParticles);
+               var dir = FromTo(TargetParticle, OtherParticles).normalized;
+               if (TargetParticle.color == OtherParticles.color)
+               {
+                   TargetParticle.Velocity = TargetParticle.Velocity + dir * Gravity * 0.1f * Influance(dist);//How to treat friends
+                   TargetParticle.Velocity = TargetParticle.Velocity + (TargetParticle.Velocity.normalized + OtherParticles.Velocity.normalized) * 0.01f;
+                   if (OtherParticles.color == Color.blue) TargetParticle.Velocity = TargetParticle.Velocity + dir * Gravity * 1f;
+               }
+               else TargetParticle.Velocity = TargetParticle.Velocity - dir * Gravity * 0.8f * Influance(dist);//How to treat others
+           
+           }
+           //Bias to center
+           var dirToCenter = FromToG(TargetParticle.gameObject, gameObject).normalized;
+           var distToCenter = DistG(TargetParticle.gameObject, gameObject);
+           TargetParticle.Velocity += dirToCenter * Gravity * 0.1f * distToCenter * Mathf.Sin(Time.time * 2f);
+
+            
+           TranslateBasedOnVelocity(TargetParticle);
+        }
+    }
+    public void UpdateParticleForcesV1()
     {
         //Calc Forces for this frame
         foreach (var TargetParticle in Particles)
@@ -120,19 +148,9 @@ public class ParticleManager : MonoBehaviour
         var EmptyObj = new GameObject("particle");
         var particle = EmptyObj.AddComponent<Particle>();
         EmptyObj.transform.parent = transform;
-        var ran = Random.Range(0, 3);
-        switch (ran)
-        {
-            case 0:
-                particle.color = Color.red;
-                break;
-            case 1:
-                particle.color = Color.green;
-                break;
-            case 2:
-                particle.color = Color.blue;
-                break;
-        }
+        var ran = Random.Range(0, particleTypes.Length);
+        particle.particleType = particleTypes[ran];
+        particle.color = particleTypes[ran].color;
         particle.transform.position = new Vector3(Random.Range(-RandomRange, RandomRange), Random.Range(-RandomRange, RandomRange), 0);
         Particles.Add(particle);
     }

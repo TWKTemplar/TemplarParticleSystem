@@ -6,4 +6,5 @@ public class Particle : MonoBehaviour
 {
     public Vector3 Velocity;
     public Color color;
+    public ParticleType particleType;
 }

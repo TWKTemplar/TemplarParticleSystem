@@ -40,12 +40,12 @@ public class ParticleManager : MonoBehaviour
                         TargetParticle.Velocity = TargetParticle.Velocity + (TargetParticle.Velocity.normalized + OtherParticles.Velocity.normalized) * 0.01f;
                         if(OtherParticles.color == Color.blue) TargetParticle.Velocity = TargetParticle.Velocity + dir * Gravity * 1f;
                     }
-                    else TargetParticle.Velocity = TargetParticle.Velocity - dir * Gravity * 0.1f * Influance(dist);//How to treat others
+                    else TargetParticle.Velocity = TargetParticle.Velocity - dir * Gravity * 0.8f * Influance(dist);//How to treat others
                 }
                 //Bias to center
                 var dirToCenter = FromToG(TargetParticle.gameObject, gameObject).normalized;
                 var distToCenter = DistG(TargetParticle.gameObject, gameObject);
-                TargetParticle.Velocity += dirToCenter * Gravity * 0.01f * distToCenter;
+                TargetParticle.Velocity += dirToCenter * Gravity * 0.05f * distToCenter;
                 
             }
             else if (TargetParticle.color == Color.green)
@@ -57,7 +57,8 @@ public class ParticleManager : MonoBehaviour
                     if (TargetParticle.color == OtherParticles.color) TargetParticle.Velocity = TargetParticle.Velocity - dir * Gravity * 0.6f * Influance(dist);//How to treat friends
                     else
                     {
-                        TargetParticle.Velocity = TargetParticle.Velocity - dir * Gravity * 2f * Influance(dist);//How to treat others
+                        TargetParticle.Velocity = TargetParticle.Velocity + dir * Gravity * 5f * Influance(dist);//How to treat others
+                        if(OtherParticles.color == Color.blue) TargetParticle.Velocity = TargetParticle.Velocity + dir * Gravity * 8f * Influance(dist);//How to treat others
                     } 
                 }
                 //Bias to center

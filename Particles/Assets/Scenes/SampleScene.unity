@@ -167,20 +167,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a49d9536c9cac04f929b44fe4a5566d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ShpereSize: 0.1
+  ShpereSize: 0.2
   Gravity: 0.2
   BiasToCenter: 0
   MinDistanceThreashold: 1
   MinDistanceForce: 1
   Drag: 0.05
   BoundingBox: {x: 30, y: 30, z: 0}
-  NumberOfParticlesToSpawn: 150
+  NumberOfParticlesToSpawn: 175
   Particles: []
   particleTypes:
   - {fileID: 11400000, guid: 466702741bbc2f44f943b987650b0893, type: 2}
   - {fileID: 11400000, guid: 8b42955564fdb404a92fa26364438308, type: 2}
   - {fileID: 11400000, guid: 443daee9142a4e7449b89f55c93fe529, type: 2}
   - {fileID: 11400000, guid: 1d94665e6ebeaa841a934f80ef18e090, type: 2}
+  VelocityGizmoLength: 0
 --- !u!1 &1408509421
 GameObject:
   m_ObjectHideFlags: 0

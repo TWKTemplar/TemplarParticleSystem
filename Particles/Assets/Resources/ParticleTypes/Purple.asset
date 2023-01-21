@@ -24,7 +24,7 @@ MonoBehaviour:
   - -0.2
   - 0.2
   MatchAvgDir:
-  - 0
+  - 0.01
   - 0
   - 0
   - 0

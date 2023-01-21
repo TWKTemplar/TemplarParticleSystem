@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76d63102a71a8e44fb45b26c79c7e0cd, type: 3}
   m_Name: Blue
   m_EditorClassIdentifier: 
-  color: {r: 0, g: 0, b: 1, a: 1}
+  color: {r: 0, g: 0.66985846, b: 1, a: 1}
   preferences:
   - {fileID: 11400000}
   - {fileID: 11400000, guid: 8b42955564fdb404a92fa26364438308, type: 2}
@@ -24,7 +24,7 @@ MonoBehaviour:
   - 0
   - -0.2
   MatchAvgDir:
-  - 0
+  - 0.01
   - 0
   - 0
   - 0

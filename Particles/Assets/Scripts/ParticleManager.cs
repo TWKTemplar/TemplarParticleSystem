@@ -24,12 +24,7 @@ public class ParticleManager : MonoBehaviour
     float minX;
     float maxY;
     float minY;
-    
-    public void Start()
-    {
-        CalcMinMaxXY();//calculates the offsets for the bounding box
-    }
-    private void FixedUpdate()
+    private void Update()
     {
         if (NumberOfParticlesToSpawn != 0) SpawnRandomParticles();
         else
@@ -171,6 +166,16 @@ public class ParticleManager : MonoBehaviour
             Gizmos.color = particle.color;
             Gizmos.DrawSphere(particle.transform.position, ShpereSize);
             Gizmos.DrawLine(particle.transform.position, particle.transform.position + particle.Velocity * VelocityGizmoLength);
+
+            #region Ghost Particles
+            Gizmos.color = Color.white;
+            Gizmos.DrawSphere(particle.transform.position + BoundingBox.x * Vector3.right, ShpereSize);//Right
+            Gizmos.DrawSphere(particle.transform.position + BoundingBox.x * Vector3.left, ShpereSize);//Left
+            Gizmos.DrawSphere(particle.transform.position + BoundingBox.y * Vector3.up, ShpereSize);//up
+            Gizmos.DrawSphere(particle.transform.position + BoundingBox.y * Vector3.down, ShpereSize);//down
+            #endregion
+
+
         }
 
 
